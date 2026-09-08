@@ -9,7 +9,8 @@ __pycache__/
 *$py.class
 
 # PyTorch / Models
-*.pt
+# Allow yolov8n.pt (6MB) so cloud deployments don't need to download it
+!yolov8n.pt
 *.pth
 models/
 

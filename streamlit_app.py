@@ -4,9 +4,22 @@ Deployable on Streamlit Community Cloud (share.streamlit.io) or locally.
 """
 
 import io
+import sys
+import subprocess
 import base64
 import streamlit as st
 from PIL import Image, ImageDraw
+
+# Auto-fix for headless Linux (Streamlit Cloud) if libGL is missing
+try:
+    import cv2
+except ImportError as e:
+    if "libGL" in str(e):
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "opencv-python"], check=False)
+            subprocess.run([sys.executable, "-m", "pip", "install", "--no-cache-dir", "opencv-python-headless"], check=False)
+        except Exception:
+            pass
 
 from agent.decision_agent import DecisionAgent
 
@@ -25,7 +38,12 @@ st.set_page_config(
 # -------------------------------------------------------------
 @st.cache_resource(show_spinner="Loading YOLOv8 Deep Learning Model...")
 def get_agent():
-    return DecisionAgent(yolo_model="yolov8n.pt", yolo_conf=0.25)
+    a = DecisionAgent(yolo_model="yolov8n.pt", yolo_conf=0.25)
+    try:
+        a.yolo_tool._get_model()
+    except Exception as e:
+        a.yolo_tool.diagnostic_error = str(e)
+    return a
 
 agent = get_agent()
 

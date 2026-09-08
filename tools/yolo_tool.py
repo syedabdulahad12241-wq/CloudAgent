@@ -32,6 +32,7 @@ class YOLOTool:
         self.conf_threshold = conf_threshold
         self._model = None
         self._is_ultralytics_available = None
+        self.diagnostic_error = ""
 
     def _check_ultralytics(self) -> bool:
         """Check if ultralytics package is installed and can load native DLLs."""
@@ -39,8 +40,9 @@ class YOLOTool:
             try:
                 import ultralytics
                 self._is_ultralytics_available = True
-            except (ImportError, OSError, Exception) as e:
+            except Exception as e:
                 self._is_ultralytics_available = False
+                self.diagnostic_error = f"Import error: {str(e)}"
                 logger.warning(f"Ultralytics/Torch native load warning ({e}). Running visual analysis mode.")
         return self._is_ultralytics_available
 
@@ -51,7 +53,8 @@ class YOLOTool:
                 from ultralytics import YOLO
                 logger.info(f"Loading YOLO model: {self.model_name}...")
                 self._model = YOLO(self.model_name)
-            except (ImportError, OSError, Exception) as e:
+            except Exception as e:
+                self.diagnostic_error = f"Model load error: {str(e)}"
                 logger.warning(f"Could not load YOLO model ({e}). Fallback visual analyzer active.")
                 self._model = None
         return self._model
