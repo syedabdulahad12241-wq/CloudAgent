@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  vision-agent:
+    build: .
+    container_name: vision_decision_agent
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./models:/root/.cache/ultralytics

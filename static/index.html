@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision Decision Agent | Deep Learning & YOLO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Navigation Bar -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-brain text-white text-lg"></i>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            Vision Decision Agent
+          </span>
+          <span class="text-xs text-slate-400 block -mt-1 font-mono">Autonomous Deep Learning & YOLO Engine</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span id="status-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span>
+          Agent Online
+        </span>
+        <a href="/docs" target="_blank" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-800 transition">
+          <i class="fa-solid fa-code mr-1"></i> API Docs
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Top Introduction Banner -->
+    <div class="mb-8 p-6 rounded-2xl bg-gradient-to-r from-indigo-950/50 via-slate-900/50 to-purple-950/40 border border-indigo-900/40 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white mb-2">Deep Learning Vision & Autonomous Decision Agent</h1>
+          <p class="text-sm text-slate-300 max-w-3xl leading-relaxed">
+            Upload any photo or capture live video. The agent coordinates 
+            <span class="text-indigo-400 font-semibold">YOLOv8 Deep Learning Object Detection</span> and 
+            <span class="text-purple-400 font-semibold">Scene Feature Extraction</span> to deduce 
+            <strong class="text-white">"what it is"</strong> and formulate an actionable decision.
+          </p>
+        </div>
+        <!-- Quick Preset Samples -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block w-full md:w-auto">Quick Test:</span>
+          <button onclick="loadSampleScene('workspace')" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition flex items-center">
+            <i class="fa-solid fa-laptop mr-1.5 text-indigo-400"></i> Workspace
+          </button>
+          <button onclick="loadSampleScene('traffic')" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition flex items-center">
+            <i class="fa-solid fa-car mr-1.5 text-amber-400"></i> Traffic
+          </button>
+          <button onclick="loadSampleScene('nature')" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition flex items-center">
+            <i class="fa-solid fa-tree mr-1.5 text-emerald-400"></i> Nature
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- Left Column: Input, Controls, & Camera -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Upload Card -->
+        <div class="glass rounded-2xl p-6 shadow-xl">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-400 flex items-center">
+              <i class="fa-solid fa-image mr-2"></i> Input Source
+            </h2>
+            <div class="flex space-x-1 bg-slate-800 p-1 rounded-lg">
+              <button id="tab-upload-btn" onclick="switchInputTab('upload')" class="px-3 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white transition">
+                Upload
+              </button>
+              <button id="tab-webcam-btn" onclick="switchInputTab('webcam')" class="px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">
+                Webcam
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 1: File Upload -->
+          <div id="tab-upload">
+            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-900/80 group">
+              <input type="file" id="file-input" accept="image/*" class="hidden">
+              <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-indigo-950/70 border border-indigo-800/50 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+              </div>
+              <p class="text-sm font-medium text-slate-200">Drag & Drop photo here</p>
+              <p class="text-xs text-slate-500 mt-1">or click to browse from device (JPG, PNG, WebP)</p>
+            </div>
+          </div>
+
+          <!-- Tab 2: Webcam Capture -->
+          <div id="tab-webcam" class="hidden">
+            <div class="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-slate-800">
+              <video id="webcam-video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+              <div id="webcam-placeholder" class="text-center p-6">
+                <i class="fa-solid fa-video text-3xl text-slate-600 mb-2"></i>
+                <p class="text-xs text-slate-400">Click below to activate your camera</p>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button id="start-cam-btn" onclick="startCamera()" class="flex-1 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition">
+                <i class="fa-solid fa-camera mr-1"></i> Start Camera
+              </button>
+              <button id="snap-btn" onclick="captureSnapshot()" disabled class="flex-1 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-lg transition">
+                <i class="fa-solid fa-circle-dot mr-1"></i> Capture Photo
+              </button>
+            </div>
+          </div>
+
+          <!-- User Goal Input -->
+          <div class="mt-4">
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Agent Goal / Question</label>
+            <div class="relative">
+              <input type="text" id="goal-input" value="What is this photo and what decision should be taken?"
+                class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition pr-8">
+              <i class="fa-solid fa-bullseye absolute right-3 top-3 text-slate-500 text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Execute Button -->
+          <button id="analyze-btn" onclick="executeAgentAnalysis()" disabled
+            class="w-full mt-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2">
+            <span id="btn-spinner" class="hidden"><i class="fa-solid fa-circle-notch animate-spin"></i></span>
+            <span id="btn-text"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Run Agent Decision</span>
+          </button>
+        </div>
+
+        <!-- System Pipeline Info -->
+        <div class="glass rounded-2xl p-5 text-xs space-y-3">
+          <div class="font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            <span>Active Architecture</span>
+            <span class="text-indigo-400 font-mono">v1.0</span>
+          </div>
+          <div class="space-y-2 text-slate-400">
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center"><i class="fa-solid fa-eye text-indigo-400 mr-2"></i> Vision Tool</span>
+              <span class="font-mono text-slate-200">YOLOv8 Deep Learning</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center"><i class="fa-solid fa-compass text-purple-400 mr-2"></i> Context Tool</span>
+              <span class="font-mono text-slate-200">Scene Classifier</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+              <span class="flex items-center"><i class="fa-solid fa-scale-balanced text-emerald-400 mr-2"></i> Decision Cycle</span>
+              <span class="font-mono text-slate-200">ReAct Reasoning Loop</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Visualizer, Decision & Reasoning Log -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Welcome Placeholder (shown before any analysis) -->
+        <div id="results-placeholder" class="glass rounded-2xl p-12 text-center border border-dashed border-slate-800">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-950/40 border border-indigo-900/50 flex items-center justify-center text-indigo-400">
+            <i class="fa-solid fa-camera-retro text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Ready to Inspect Photo</h3>
+          <p class="text-sm text-slate-400 max-w-md mx-auto">
+            Upload an image or pick a preset sample on the left to start the deep learning perception and agentic decision workflow.
+          </p>
+        </div>
+
+        <!-- Active Results Container (hidden by default) -->
+        <div id="results-container" class="space-y-6 hidden">
+          
+          <!-- Visual Inspection Pane -->
+          <div class="glass rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-400 flex items-center">
+                <i class="fa-solid fa-object-ungroup mr-2"></i> Visual Deep Learning Inspection
+              </h2>
+              <span id="detected-counter" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-indigo-300 font-mono">
+                0 objects found
+              </span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Raw Input Preview -->
+              <div class="space-y-2">
+                <span class="text-xs text-slate-400 font-medium block">Raw Input Photo</span>
+                <div class="rounded-xl overflow-hidden bg-slate-900 border border-slate-800 aspect-video flex items-center justify-center">
+                  <img id="preview-raw" class="w-full h-full object-contain" alt="Raw Input">
+                </div>
+              </div>
+              <!-- YOLO Annotated Output -->
+              <div class="space-y-2">
+                <span class="text-xs text-indigo-300 font-medium block">YOLO Deep Learning Bounding Boxes</span>
+                <div class="rounded-xl overflow-hidden bg-slate-900 border border-indigo-900/50 aspect-video flex items-center justify-center relative">
+                  <img id="preview-annotated" class="w-full h-full object-contain" alt="YOLO Annotated">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Autonomous Decision Card -->
+          <div class="glass rounded-2xl p-6 border-l-4 border-l-indigo-500 shadow-xl space-y-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span id="badge-category" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800">
+                  Category
+                </span>
+                <h3 id="decision-title" class="text-xl font-bold text-white mt-1.5 leading-snug">
+                  What it is
+                </h3>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 block font-mono">Agent Confidence</span>
+                <span id="confidence-pct" class="text-2xl font-black text-indigo-400 font-mono">--%</span>
+              </div>
+            </div>
+
+            <!-- Decision & Action Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                <div class="flex items-center text-xs font-bold text-slate-300 mb-1">
+                  <i class="fa-solid fa-gavel text-amber-400 mr-2"></i> Agent Decision
+                </div>
+                <p id="decision-text" class="text-sm text-slate-300 leading-relaxed font-medium">--</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                <div class="flex items-center text-xs font-bold text-slate-300 mb-1">
+                  <i class="fa-solid fa-arrow-right-to-bracket text-emerald-400 mr-2"></i> Prescribed Action
+                </div>
+                <p id="action-text" class="text-sm text-slate-300 leading-relaxed font-medium">--</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Agent Reasoning Trace -->
+          <div class="glass rounded-2xl p-6 shadow-xl">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-purple-400 mb-4 flex items-center">
+              <i class="fa-solid fa-network-wired mr-2"></i> Agentic AI Reasoning Trace (ReAct)
+            </h2>
+            <div id="reasoning-timeline" class="space-y-3 custom-scrollbar max-h-64 overflow-y-auto pr-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Detected Entities Breakdown -->
+          <div class="glass rounded-2xl p-6 shadow-xl">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center">
+              <i class="fa-solid fa-tags mr-2"></i> Detected Entities & Confidences
+            </h2>
+            <div id="entities-list" class="space-y-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <canvas id="hidden-canvas" class="hidden"></canvas>
+
+  <script>
+    let currentImageBase64 = null;
+    let webcamStream = null;
+
+    const fileInput = document.getElementById('file-input');
+    const dropZone = document.getElementById('drop-zone');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const goalInput = document.getElementById('goal-input');
+
+    // Drag and Drop
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-indigo-500', 'bg-indigo-950/20');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/20');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-950/20');
+      if (e.dataTransfer.files.length) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentImageBase64 = e.target.result;
+        analyzeBtn.disabled = false;
+        dropZone.innerHTML = `
+          <div class="flex items-center justify-center space-x-3 text-emerald-400">
+            <i class="fa-solid fa-circle-check text-2xl"></i>
+            <div class="text-left">
+              <p class="text-xs font-semibold text-white">${file.name}</p>
+              <p class="text-[10px] text-slate-400">${(file.size / 1024).toFixed(1)} KB loaded</p>
+            </div>
+          </div>
+        `;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Input Tabs
+    function switchInputTab(tab) {
+      if (tab === 'upload') {
+        document.getElementById('tab-upload').classList.remove('hidden');
+        document.getElementById('tab-webcam').classList.add('hidden');
+        document.getElementById('tab-upload-btn').className = "px-3 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white transition";
+        document.getElementById('tab-webcam-btn').className = "px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white transition";
+        stopCamera();
+      } else {
+        document.getElementById('tab-upload').classList.add('hidden');
+        document.getElementById('tab-webcam').classList.remove('hidden');
+        document.getElementById('tab-webcam-btn').className = "px-3 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white transition";
+        document.getElementById('tab-upload-btn').className = "px-3 py-1 text-xs font-medium rounded-md text-slate-400 hover:text-white transition";
+      }
+    }
+
+    // Webcam Management
+    async function startCamera() {
+      const video = document.getElementById('webcam-video');
+      const placeholder = document.getElementById('webcam-placeholder');
+      const snapBtn = document.getElementById('snap-btn');
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
+        video.srcObject = webcamStream;
+        video.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        snapBtn.disabled = false;
+      } catch (err) {
+        alert('Could not access camera: ' + err.message);
+      }
+    }
+
+    function stopCamera() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      const video = document.getElementById('webcam-video');
+      video.classList.add('hidden');
+      document.getElementById('webcam-placeholder').classList.remove('hidden');
+      document.getElementById('snap-btn').disabled = true;
+    }
+
+    function captureSnapshot() {
+      const video = document.getElementById('webcam-video');
+      const canvas = document.getElementById('hidden-canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      currentImageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      analyzeBtn.disabled = false;
+      stopCamera();
+      switchInputTab('upload');
+      dropZone.innerHTML = `
+        <div class="flex items-center justify-center space-x-3 text-emerald-400">
+          <i class="fa-solid fa-camera text-2xl"></i>
+          <div class="text-left">
+            <p class="text-xs font-semibold text-white">Camera Snapshot Ready</p>
+            <p class="text-[10px] text-slate-400">${canvas.width}x${canvas.height} px</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Run Preset Sample Scene
+    async function loadSampleScene(type) {
+      setLoading(true);
+      try {
+        const resp = await fetch(`/api/sample-scene?scene_type=${type}`);
+        const data = await resp.json();
+        renderResults(data);
+      } catch (err) {
+        alert('Failed to load sample: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Execute Agent Analysis
+    async function executeAgentAnalysis() {
+      if (!currentImageBase64) return;
+      setLoading(true);
+
+      try {
+        const resp = await fetch('/api/analyze-base64', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: currentImageBase64,
+            goal: goalInput.value
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.detail || 'Server returned error status ' + resp.status);
+        }
+        renderResults(data);
+      } catch (err) {
+        alert('Analysis failed: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(isLoading) {
+      analyzeBtn.disabled = isLoading;
+      document.getElementById('btn-spinner').classList.toggle('hidden', !isLoading);
+      document.getElementById('btn-text').classList.toggle('hidden', isLoading);
+    }
+
+    function renderResults(data) {
+      document.getElementById('results-placeholder').classList.add('hidden');
+      document.getElementById('results-container').classList.remove('hidden');
+
+      // Previews
+      if (currentImageBase64) {
+        document.getElementById('preview-raw').src = currentImageBase64;
+      } else {
+        document.getElementById('preview-raw').src = data.annotated_image;
+      }
+      document.getElementById('preview-annotated').src = data.annotated_image;
+
+      // Badges & Decision
+      document.getElementById('badge-category').innerText = data.category || 'General';
+      document.getElementById('decision-title').innerText = data.primary_identification;
+      document.getElementById('confidence-pct').innerText = `${Math.round(data.confidence * 100)}%`;
+      document.getElementById('decision-text').innerText = data.decision;
+      document.getElementById('action-text').innerText = data.action_recommendation;
+
+      const totalObjects = data.detected_entities ? data.detected_entities.length : 0;
+      document.getElementById('detected-counter').innerText = `${totalObjects} objects found`;
+
+      // Reasoning Timeline
+      const timeline = document.getElementById('reasoning-timeline');
+      timeline.innerHTML = '';
+      (data.reasoning_steps || []).forEach(step => {
+        const item = document.createElement('div');
+        item.className = "flex items-start space-x-3 text-xs p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80";
+        
+        let icon = 'fa-brain text-purple-400';
+        if (step.tool === 'yolo_detector') icon = 'fa-eye text-indigo-400';
+        else if (step.tool === 'scene_classifier') icon = 'fa-compass text-amber-400';
+        else if (step.phase.includes('Decision')) icon = 'fa-gavel text-emerald-400';
+
+        item.innerHTML = `
+          <div class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-200">${step.phase}</span>
+              <span class="text-[10px] text-slate-500 font-mono">Step ${step.step}</span>
+            </div>
+            <p class="text-slate-400 mt-0.5 leading-relaxed">${step.thought}</p>
+          </div>
+        `;
+        timeline.appendChild(item);
+      });
+
+      // Entities Breakdown
+      const entitiesList = document.getElementById('entities-list');
+      entitiesList.innerHTML = '';
+      if (!data.detected_entities || data.detected_entities.length === 0) {
+        entitiesList.innerHTML = '<p class="text-xs text-slate-500">No bounding box objects detected above threshold.</p>';
+      } else {
+        data.detected_entities.forEach(entity => {
+          const row = document.createElement('div');
+          row.className = "p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs";
+          const pct = Math.round(entity.confidence * 100);
+          row.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-indigo-300 capitalize">${entity.label}</span>
+              <span class="text-[10px] text-slate-500">(${entity.location})</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
+              </div>
+              <span class="font-mono text-slate-300 text-xs w-8 text-right">${pct}%</span>
+            </div>
+          `;
+          entitiesList.appendChild(row);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
