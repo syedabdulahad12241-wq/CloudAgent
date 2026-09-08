@@ -10,8 +10,40 @@ from PIL import Image, ImageStat
 class SceneClassifierTool:
     """
     Analyzes holistic image characteristics to infer the setting, environment,
-    lighting condition, and overall composition.
+    lighting condition, and overall composition. Also provides deep learning
+    fine-grained classification (e.g. Dog breed, Car model, Object category).
     """
+
+    def __init__(self):
+        self._classifier = None
+        self._weights = None
+
+    def classify_subject(self, pil_image: Image.Image) -> Dict[str, Any]:
+        """
+        Deep learning ImageNet classifier (1000 categories, including exact dog breeds).
+        Runs pure PyTorch without external libraries.
+        """
+        try:
+            import torch
+            from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
+            if self._classifier is None:
+                self._weights = MobileNet_V3_Small_Weights.DEFAULT
+                self._classifier = mobilenet_v3_small(weights=self._weights).eval()
+
+            transform = self._weights.transforms()
+            batch = transform(pil_image.convert("RGB")).unsqueeze(0)
+            with torch.no_grad():
+                probs = self._classifier(batch).squeeze(0).softmax(0)
+            top_prob, top_catid = torch.topk(probs, 1)
+            cat_name = self._weights.meta["categories"][top_catid[0].item()]
+            
+            clean_name = cat_name.replace("_", " ").title()
+            return {
+                "specific_name": clean_name,
+                "classifier_confidence": round(float(top_prob[0].item()), 3)
+            }
+        except Exception:
+            return {"specific_name": "", "classifier_confidence": 0.0}
 
     def analyze_scene(self, pil_image: Image.Image) -> Dict[str, Any]:
         """
